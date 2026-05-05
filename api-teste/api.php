@@ -17,37 +17,79 @@
     //     ["id" =>2, "nome" => "Joao", "email" => "joao@gmail.com"]
     // ];
 
-    switch($metodo){
-        case 'GET' :
-            //echo "AQUI AÇÕES DO METODO GET";
-            echo json_encode($usuarios);
-            break;
-        case 'POST' :
-            //echo "AQUI AÇÕES DO METODO POST";
-            $dados = json_decode(file_get_contents('php://input'),true);
-            //print_r($dados);
-            $novoUsuario = [
-                "id" => $dados["id"],
-                "nome" => $dados["nome"],
-                "enail" => $dados["email"],
-            ];
+   switch ($metodo) {
 
-            array_push($usuarios, $novoUsuario);
-            echo json_encode('Usuário inserido com sucesso!');
-            print_r($usuarios);
+    case 'GET':
+        // Verifica se há um parâmetro "id" na URL
+        if (isset($_GET["id"])) {
+            $id = intval($_GET["id"]);
+            $usuario_encontrado = null;
 
-            break;
-        case 'PUT' :
-            echo "AQUI AÇÕES DO METODO PUT";
-            break;
-        case 'DELETE' :
-            echo "AQUI AÇÕES DO METODO DELETE#";
-            break;
+            // Procura o usuário pelo ID
+            foreach ($usuarios as $usuario) {
+                if ($usuario['id'] == $id) {
+                    $usuario_encontrado = $usuario;
+                    break;
+                }
+            }
 
-        default:
-            echo "MÉTODO NÃO ENCONTRADO!";
-            break;       
+            if ($usuario_encontrado) {
+                echo json_encode($usuario_encontrado, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+            } else {
+                http_response_code(404);
+                echo json_encode(["erro" => "Usuário não encontrado."], JSON_UNESCAPED_UNICODE);
+            }
+
+        } else {
+            // Retorna todos os usuários
+            echo json_encode($usuarios, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+        }
+        break;
+
+
+    case 'POST':
+        $dados = json_decode(file_get_contents('php://input'), true);
+
+    // Verifica campos obrigatórios (sem exigir o ID)
+    if (!isset($dados["nome"]) || !isset($dados["email"])) {
+        http_response_code(400);
+        echo json_encode(["erro" => "Nome e email são obrigatórios."], JSON_UNESCAPED_UNICODE);
+        break;
     }
+
+    // Gera um novo ID único
+        $novo_id = 1;
+    if (!empty($usuarios)) {
+        $ids = array_column($usuarios, 'id');
+        $novo_id = max($ids) + 1;
+    }
+
+    $novo_usuario = [
+        "id" => $novo_id,
+        "nome" => $dados["nome"],
+        "email" => $dados["email"]
+    ];
+
+    // Adiciona o novo usuário
+    $usuarios[] = $novo_usuario;
+
+    // Salva no arquivo
+    file_put_contents($arquivo, json_encode($usuarios, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+
+    // Retorna confirmação
+http_response_code(201);
+    echo json_encode([
+        "mensagem" => "Usuário inserido com sucesso!",
+        "usuario" => $novo_usuario
+    ], JSON_UNESCAPED_UNICODE);
+    break;
+
+
+default:
+    http_response_code(405); // Método não permitido
+    echo json_encode(["erro" => "Método não permitido"], JSON_UNESCAPED_UNICODE);
+break;
+}
 
 
     //conteudo
