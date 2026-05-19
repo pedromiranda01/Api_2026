@@ -1,28 +1,26 @@
 <?php
-    //cabecalho
-    header("Content-Type: application/json; charset=UTF-");
+//CABEÇALHO
+header("Content-Type: application/json; charset=utf-8"); //DEFINE O TIPO DE RESPOSTA
 
-    $metodo = $_SERVER['REQUEST_METHOD'];
+$metodo = $_SERVER['REQUEST_METHOD'];
+//echo "Método da requisição: " . $metodo;
 
-    $arquivo = 'usuarios.json';
+// RECUPERA O ARQUIVO JSON NA MESMA PASTA DO PROJETO
+$arquivo = "usuarios.json";
 
-    if (!file_exists($arquivo)) {
-        file_put_contents($arquivo, json_encode([], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
-    }
+// VERIFICA SE O ARQUIVO EXISTE, SE NÃO EXISTIR CRIA UM COM ARRAY VAZIO
+if (!file_exists($arquivo)) {
+    file_put_contents($arquivo, json_encode([], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+}
 
-    $usuarios = json_decode(file_get_contents($arquivo),true);
+// LÊ O CONTEÚDO DO ARQUIVO JSON
+$usuarios = json_decode(file_get_contents($arquivo), true);
 
-    // $usuarios = [
-    //     ["id" =>1, "nome" => "Maria", "email" => "maria@gmail.com"],
-    //     ["id" =>2, "nome" => "Joao", "email" => "joao@gmail.com"]
-    // ];
-
-   switch ($metodo) {
-
-    case 'GET':
-        // Verifica se há um parâmetro "id" na URL
-        if (isset($_GET["id"])) {
-            $id = intval($_GET["id"]);
+switch ($metodo) {
+    case "GET":
+        // verifica se há um parâmetro "id" na URL
+        if (isset($_GET['id'])) {
+            $id = intval($_GET['id']);
             $usuario_encontrado = null;
 
             // Procura o usuário pelo ID
@@ -39,57 +37,56 @@
                 http_response_code(404);
                 echo json_encode(["erro" => "Usuário não encontrado."], JSON_UNESCAPED_UNICODE);
             }
-
         } else {
             // Retorna todos os usuários
             echo json_encode($usuarios, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
         }
         break;
 
-
     case 'POST':
         $dados = json_decode(file_get_contents('php://input'), true);
 
-    // Verifica campos obrigatórios (sem exigir o ID)
-    if (!isset($dados["nome"]) || !isset($dados["email"])) {
-        http_response_code(400);
-        echo json_encode(["erro" => "Nome e email são obrigatórios."], JSON_UNESCAPED_UNICODE);
-        break;
-    }
+        // VERIFICA CAMPOS OBRIGATÓRIOS (sem exigir o id)
+        if (!isset($dados["nome"]) || !isset($dados["email"])) {
+            http_response_code(400);
+            echo json_encode(["erro" => "Nome e email são obrigatórios."], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
 
-    // Gera um novo ID único
+        // GERA UM NOVO ID ÚNICO
         $novo_id = 1;
-    if (!empty($usuarios)) {
-        $ids = array_column($usuarios, 'id');
-        $novo_id = max($ids) + 1;
-    }
+        if (!empty($usuarios)) {
+            $ids = array_column($usuarios, 'id');
+            $novo_id = max($ids) + 1;
+        }
 
-    $novo_usuario = [
-        "id" => $novo_id,
-        "nome" => $dados["nome"],
-        "email" => $dados["email"]
-    ];
+        $novo_usuario = [
+            "id" => $novo_id,
+            "nome" => $dados['nome'],
+            "email" => $dados['email'],
+        ];
 
-    // Adiciona o novo usuário
-    $usuarios[] = $novo_usuario;
+        // ADICIONA O NOVO USUÁRIO
+        $usuarios[] = $novo_usuario;
 
-    // Salva no arquivo
-    file_put_contents($arquivo, json_encode($usuarios, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+        // SALVA NO ARQUIVO
+        file_put_contents($arquivo, json_encode($usuarios, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 
-    // Retorna confirmação
-http_response_code(201);
-    echo json_encode([
-        "mensagem" => "Usuário inserido com sucesso!",
-        "usuario" => $novo_usuario
-    ], JSON_UNESCAPED_UNICODE);
-    break;
+        // RETORNA CONFIRMAÇÃO
+        echo json_encode([
+            "mensagem" => "Usuário inserido com sucesso!",
+            "usuario" => $novo_usuario
+        ], JSON_UNESCAPED_UNICODE);
+        break;
 
-
-default:
-    http_response_code(405); // Método não permitido
-    echo json_encode(["erro" => "Método não permitido"], JSON_UNESCAPED_UNICODE);
-break;
+    default:
+        // echo "MÉTODO NÃO ENCONTRADO!";
+        // break;
+        http_response_code(405); // Método não permitido
+        echo json_encode(["erro" => "Método não permitido!"], JSON_UNESCAPED_UNICODE);
+        break;
 }
+?>
 
 
     //conteudo
